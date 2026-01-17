@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Age Register & Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+            --box-bg: #f8f9fa;
+            --primary: #6c5ce7;
+            --accent: #e8f4fd;
+            --accent-text: #2980b9;
+            --success: #00b894;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --card-bg: #1e272e;
+            --text-main: #ffffff;
+            --text-sub: #bdc3c7;
+            --box-bg: #2d3436;
+            --primary: #a29bfe;
+            --accent: #2c3e50;
+            --accent-text: #3498db;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg-color); 
+            color: var(--text-main);
+            display: flex; justify-content: center; align-items: flex-start; 
+            min-height: 100vh; margin: 0; padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .container { width: 100%; max-width: 500px; }
+
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; background: rgba(0,0,0,0.05); padding: 5px; border-radius: 12px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; background: transparent; color: var(--text-sub); font-weight: bold; transition: 0.3s; }
+        .tab-btn.active { background: var(--card-bg); color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+        .card { 
+            background: var(--card-bg); 
+            padding: 30px; border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+            text-align: center; position: relative;
+        }
+
+        .view { display: none; animation: fadeIn 0.4s ease; }
+        .view.active { display: block; }
+
+        .theme-toggle { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; }
+
+        input { 
+            width: 100%; padding: 15px; border: 2px solid #ddd; 
+            border-radius: 10px; font-size: 16px; margin-bottom: 15px; 
+            box-sizing: border-box; background: var(--box-bg); color: var(--text-main);
+        }
+
+        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        .calc-btn { flex: 2; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .save-btn { flex: 1; background: var(--success); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .clear-btn { flex: 1; background: #ff7675; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        
+        .download-btn {
+            width: 100%; margin-top: 20px; padding: 12px; 
+            background: transparent; color: var(--primary); border: 2px solid var(--primary);
+            border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .download-btn:hover { background: var(--primary); color: white; }
+
+        /* Register Table Styling */
+        #chartCapture { background: var(--card-bg); padding: 10px; border-radius: 10px; }
+        .register-table-container { margin-top: 20px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { font-size: 11px; color: var(--text-sub); padding: 10px; border-bottom: 1px solid var(--box-bg); text-transform: uppercase; }
+        td { padding: 15px 10px; border-bottom: 1px solid var(--box-bg); font-size: 14px; }
+        .bday-tag { font-size: 11px; background: var(--accent); color: var(--accent-text); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; }
+        .del-btn { color: #ff7675; border: none; background: none; cursor: pointer; font-weight: bold; }
+
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+        .box { background: var(--box-bg); padding: 15px; border-radius: 12px; border-bottom: 3px solid var(--primary); }
+        .val { display: block; font-size: 22px; font-weight: bold; }
+        .unit { font-size: 11px; color: var(--text-sub); text-transform: uppercase; }
+        .total-stats { background: var(--accent); padding: 12px; border-radius: 12px; margin-bottom: 10px; color: var(--accent-text); font-weight: bold; }
+        .countdown-bar { background: #fff9db; padding: 12px; border-radius: 12px; border: 1px solid #f1c40f; color: #856404; font-size: 14px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('personal')">My Tracker</button>
+        <button class="tab-btn" onclick="switchTab('register')">Age Register</button>
+    </div>
+
+    <div class="card">
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
+
+        <div id="personalView" class="view active">
+            <h2>Life Age Tracker</h2>
+            <p style="color: var(--text-sub); margin-bottom: 25px;">Detailed personal statistics</p>
+            <input type="date" id="personalDob">
+            <div class="btn-group">
+                <button class="calc-btn" onclick="calculatePersonal()">Calculate Stats</button>
+                <button class="clear-btn" onclick="clearPersonal()">Clear</button>
+            </div>
+            
+            <div id="personalResult" style="display: none;">
+                <div class="grid">
+                    <div class="box"><span class="val" id="pYears">0</span><span class="unit">Years</span></div>
+                    <div class="box"><span class="val" id="pMonths">0</span><span class="unit">Months</span></div>
+                    <div class="box"><span class="val" id="pDays">0</span><span class="unit">Days</span></div>
+                </div>
+                <div class="total-stats">Total Months: <span id="pTotalMonths">0</span></div>
+                <div class="countdown-bar" id="pCountdown">Next Birthday: ...</div>
+            </div>
+        </div>
+
+        <div id="registerView" class="view">
+            <h2>Age Register</h2>
+            <p style="color: var(--text-sub); margin-bottom: 25px;">Family & Friends Database</p>
+            
+            <input type="text" id="rName" placeholder="Entry Name">
+            <input type="date" id="rDob">
+            <button class="calc-btn" style="width: 100%; margin-bottom: 20px;" onclick="addRegisterEntry()">Add to Register</button>
+
+            <div id="chartCapture">
+		<input type="text" id="rSearch" placeholder="🔍 Search names..." onkeyup="renderRegister()">
+
+		<div id="chartCapture">
+    		</div>
+                <div class="register-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Current Age</th>
+                                <th class="no-export"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="registerTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <button class="download-btn" onclick="downloadChart()">📸 Download Age Register</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let registerData = JSON.parse(localStorage.getItem('registerData')) || [];
+
+    function getFullAge(dobString) {
+        const dob = new Date(dobString);
+        const now = new Date();
+        now.setHours(0,0,0,0);
+        let y = now.getFullYear() - dob.getFullYear();
+        let m = now.getMonth() - dob.getMonth();
+        let d = now.getDate() - dob.getDate();
+        if (d < 0) { m--; d += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
+        if (m < 0) { y--; m += 12; }
+        let nextBday = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
+        if (now > nextBday) nextBday.setFullYear(now.getFullYear() + 1);
+        const diffDays = Math.ceil((nextBday - now) / (1000 * 60 * 60 * 24));
+        return { y, m, d, diffDays, totalMonths: (y * 12) + m };
+    }
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        if(tab === 'personal') {
+            document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+            document.getElementById('personalView').classList.add('active');
+        } else {
+            document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+            document.getElementById('registerView').classList.add('active');
+            renderRegister();
+        }
+    }
+
+    function calculatePersonal() {
+        const val = document.getElementById('personalDob').value;
+        if(!val) return alert("Select a date");
+        const age = getFullAge(val);
+        document.getElementById('personalResult').style.display = "block";
+        document.getElementById('pYears').innerText = age.y;
+        document.getElementById('pMonths').innerText = age.m;
+        document.getElementById('pDays').innerText = age.d;
+        document.getElementById('pTotalMonths').innerText = age.totalMonths.toLocaleString();
+        const cDown = document.getElementById('pCountdown');
+        cDown.innerText = (age.diffDays === 0 || age.diffDays === 365) ? "🎉 Happy Birthday!" : `Next Birthday in: ${age.diffDays} Days`;
+    }
+
+    function clearPersonal() {
+        document.getElementById('personalDob').value = "";
+        document.getElementById('personalResult').style.display = "none";
+    }
+
+    function addRegisterEntry() {
+        const name = document.getElementById('rName').value;
+        const dob = document.getElementById('rDob').value;
+        if(!name || !dob) return alert("Please fill Name and Date");
+        registerData.push({ id: Date.now(), name, dob });
+        localStorage.setItem('registerData', JSON.stringify(registerData));
+        document.getElementById('rName').value = "";
+        document.getElementById('rDob').value = "";
+        renderRegister();
+    }
+
+   function renderRegister() {
+    const tbody = document.getElementById('registerTableBody');
+    const searchTerm = document.getElementById('rSearch').value.toLowerCase(); // Get search term
+    tbody.innerHTML = "";
+    
+    // 1. Filter the data based on search term
+    const filteredData = registerData.filter(entry => 
+        entry.name.toLowerCase().includes(searchTerm)
+    );
+
+    // 2. Sort the filtered data by upcoming birthday
+    const sortedData = [...filteredData].sort((a, b) => {
+        return getFullAge(a.dob).diffDays - getFullAge(b.dob).diffDays;
+    });
+
+    // 3. Render the rows
+    sortedData.forEach(entry => {
+        const age = getFullAge(entry.dob);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><b>${entry.name}</b><br><span class="bday-tag">📅 ${entry.dob}</span></td>
+            <td>${age.y}y ${age.m}m<br><small style="color:var(--text-sub)">${age.diffDays}d to b-day</small></td>
+            <td class="no-export"><button class="del-btn" onclick="deleteEntry(${entry.id})">✕</button></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+    function deleteEntry(id) {
+        registerData = registerData.filter(m => m.id !== id);
+        localStorage.setItem('registerData', JSON.stringify(registerData));
+        renderRegister();
+    }
+
+    function downloadChart() {
+        document.querySelectorAll('.no-export').forEach(el => el.style.visibility = 'hidden');
+        const chart = document.getElementById('chartCapture');
+        html2canvas(chart, {
+            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--card-bg'),
+            scale: 2
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'Age-Register-Export.png';
+            link.href = canvas.toDataURL();
+            link.click();
+            document.querySelectorAll('.no-export').forEach(el => el.style.visibility = 'visible');
+        });
+    }
+
+    function toggleTheme() {
+        const html = document.documentElement;
+        const isDark = html.getAttribute('data-theme') === 'dark';
+        html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+        document.getElementById('themeBtn').innerText = isDark ? '🌙' : '☀️';
+        localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    }
+
+    if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('themeBtn').innerText = '☀️';
+    }
+</script>
+</body>
+</html>
